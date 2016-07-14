@@ -10,21 +10,43 @@ var exec = require('child_process').exec,
  * @return {Promise}
  */
 function execCordovaPrepare(projectRoot, platform) {
-    var deferred = Q.defer();
+    return retryAsync(getExecCordovaPrepareImpl(projectRoot, platform), 2);
+}
 
-    log.log('Preparing platform \'' + platform + '\'.');
+function getExecCordovaPrepareImpl(projectRoot, platform) {
+    return function () {
+        var deferred = Q.defer();
 
-    exec('cordova prepare ' + platform, {
-        cwd: projectRoot
-    }, function (err, stdout, stderr) {
-        if (err) {
-            deferred.reject(err || stderr);
+        log.log('Preparing platform \'' + platform + '\'.');
+
+        exec('cordova prepare ' + platform, {
+            cwd: projectRoot
+        }, function (err, stdout, stderr) {
+            if (err || stderr) {
+                deferred.reject(err || stderr);
+            } else {
+                deferred.resolve();
+            }
+        });
+
+        return deferred.promise;
+    };
+}
+
+function retryAsync(promiseFunc, maxTries, delay, iteration) {
+    delay = delay || 100;
+    iteration = iteration || 1;
+
+    return promiseFunc().catch(function (err) {
+        if (iteration < maxTries) {
+            return Q.delay(delay)
+                .then(function () {
+                    return retryAsync(promiseFunc, maxTries, delay, iteration + 1);
+                });
         }
 
-        deferred.resolve();
+        return Q.reject(err);
     });
-
-    return deferred.promise;
 }
 
 module.exports.execCordovaPrepare = execCordovaPrepare;
