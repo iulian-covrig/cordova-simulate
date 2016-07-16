@@ -2,7 +2,8 @@
 
 var exec = require('child_process').exec,
     Q = require('q'),
-    log = require('./log');
+    log = require('./log'),
+    utils = require('./jsUtils');
 
 /**
  * @param {string} projectRoot
@@ -10,7 +11,7 @@ var exec = require('child_process').exec,
  * @return {Promise}
  */
 function execCordovaPrepare(projectRoot, platform) {
-    return retryAsync(getExecCordovaPrepareImpl(projectRoot, platform), 2);
+    return utils.retryAsync(getExecCordovaPrepareImpl(projectRoot, platform));
 }
 
 function getExecCordovaPrepareImpl(projectRoot, platform) {
@@ -22,8 +23,8 @@ function getExecCordovaPrepareImpl(projectRoot, platform) {
         exec('cordova prepare ' + platform, {
             cwd: projectRoot
         }, function (err, stdout, stderr) {
-            if (err || stderr) {
-                deferred.reject(err || stderr);
+            if (err) {
+                deferred.reject(err);
             } else {
                 deferred.resolve();
             }
@@ -31,22 +32,6 @@ function getExecCordovaPrepareImpl(projectRoot, platform) {
 
         return deferred.promise;
     };
-}
-
-function retryAsync(promiseFunc, maxTries, delay, iteration) {
-    delay = delay || 100;
-    iteration = iteration || 1;
-
-    return promiseFunc().catch(function (err) {
-        if (iteration < maxTries) {
-            return Q.delay(delay)
-                .then(function () {
-                    return retryAsync(promiseFunc, maxTries, delay, iteration + 1);
-                });
-        }
-
-        return Q.reject(err);
-    });
 }
 
 module.exports.execCordovaPrepare = execCordovaPrepare;
