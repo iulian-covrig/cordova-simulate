@@ -5,6 +5,7 @@
         "commonjs": true
     },
     "rules": {
+        "no-unused-vars": ["error", {"vars": "all", "args": "none"}],
         "quotes": [ 2, "single", { "avoidEscape": false, "allowTemplateLiterals": true } ],
         "no-console": [ 0 ],
         "indent": [ "error", 4, { "SwitchCase": 1, "VariableDeclarator": 1 } ]
